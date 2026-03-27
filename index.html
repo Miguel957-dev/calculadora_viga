@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de Viga</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h2 style="text-align:center;">INFRACORE</h2>
+
+    <div class="container">
+        <h1>Calculadora de Viga</h1>
+
+        <label>Comprimento da viga (L em metros):</label>
+        <input type="number" id="L">
+
+        <label>Carga distribuída (q em kN/m):</label>
+        <input type="number" id="q">
+
+        <label>Resistência do concreto fck (MPa)</label>
+        <input type="number" id="fck">
+
+        <label>Largura da viga bw (cm)</label>
+        <input type="number" id="bw">
+
+        <label>Altura da viga h (cm)</label>
+        <input type="number" id="h">
+
+        <label>Tipo de viga</label>
+        <select id="tipo">
+            <option value="biapoiada">Biapoiada</option>
+            <option value="balanco">Balanço</option>
+        </select>
+
+        <br><br>
+
+        <button onclick="calcular()">Calcular</button>
+        <button onclick="gerarPDF()">Gerar PDF</button>
+
+        <div id="resultado"></div>
+    </div>
+
+    <!-- SCRIPTS SEMPRE NO FINAL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="script.js"></script>
+
+</body>
+</html>
