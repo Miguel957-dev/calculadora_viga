@@ -53,13 +53,18 @@ function calcular() {
         status = "❌ Crítico";
     }
 
-    // 🔥 CÁLCULO DO AÇO
-    let fyd = 435; // MPa
+    // 🔥 CÁLCULO DO AÇO CORRIGIDO
+    let fyd = 435; // MPa (CA-50)
 
-    let M_Nmm = momento * 1000000; // kN·m → N·mm
-    let d_mm = d * 1000;
+    // 1. Aplicar o coeficiente de segurança de 1.4 (Obrigatório por norma)
+    let Md_Nm = (momento * 1.4) * 1000000; 
 
-    let As = M_Nmm / (0.87 * fyd * d_mm); // mm²
+    // 2. d_mm deve ser a altura útil (ex: 800mm - 40mm de cobrimento)
+    let d_mm = (d_total - cobrimento) * 1000; 
+
+    // 3. Usar 0.8 para maior segurança em balanços pesados
+    let As = Md_Nm / (0.80 * fyd * d_mm); // mm²
+    
         // 🔩 BITOLAS DISPONÍVEIS
     let bitolas = [
         {diametro: 6.3, area: 31.2},
