@@ -132,7 +132,7 @@ function gerarPDF() {
         // CÁLCULO DO AÇO COM SEGURANÇA (1.4 e 0.80)
         let fyd = 435; 
         let Md_Nmm = (momento * 1.4) * 1000000; 
-        let As = Md_Nmm / (0.80 * fyd * d_mm);
+        let As = Md_Nmm * 1.4 / (0.80 * fyd * d_mm);
 
         // 3. HEADER DO PDF
         doc.setFillColor(30, 41, 59);
