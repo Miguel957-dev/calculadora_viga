@@ -110,7 +110,7 @@ function gerarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // ===== DADOS =====
+        // 1. CAPTURA DE DADOS
         let L = parseFloat(document.getElementById("L").value);
         let q = parseFloat(document.getElementById("q").value);
         let fck = parseFloat(document.getElementById("fck").value);
@@ -118,132 +118,93 @@ function gerarPDF() {
         let h = parseFloat(document.getElementById("h").value);
         let tipo = document.getElementById("tipo").value;
 
-        bw = bw / 100;
-        h = h / 100;
-        let d = 0.9 * h;
+        // 2. CONVERSÕES E CÁLCULOS TÉCNICOS
+        let bw_m = bw / 100;
+        let h_m = h / 100;
+        let d_m = 0.9 * h_m; 
+        let d_mm = d_m * 1000;
 
-        let momento = (tipo === "balanco") 
-            ? (q * L * L) / 2 
-            : (q * L * L) / 8;
-
+        let momento = (tipo === "balanco") ? (q * L * L) / 2 : (q * L * L) / 8;
         let fcd = fck / 1.4;
         let fcd_kN = fcd * 1000;
-        let Mres = 0.27 * fcd_kN * bw * d * d;
+        let Mres = 0.27 * fcd_kN * bw_m * d_m * d_m;
 
-        let fyd = 435;
-        let M_Nmm = momento * 1000000;
-        let d_mm = d * 1000;
-        let As = M_Nmm / (0.87 * fyd * d_mm);
+        // CÁLCULO DO AÇO COM SEGURANÇA (1.4 e 0.80)
+        let fyd = 435; 
+        let Md_Nmm = (momento * 1.4) * 1000000; 
+        let As = Md_Nmm / (0.80 * fyd * d_mm);
 
-        // ===== HEADER =====
+        // 3. HEADER DO PDF
         doc.setFillColor(30, 41, 59);
         doc.rect(0, 0, 210, 25, "F");
-
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(16);
         doc.text("INFRACORE - Relatório Estrutural", 20, 15);
 
+        // 4. TABELAS DE DADOS E RESULTADOS
         doc.setTextColor(0, 0, 0);
-
-        // ===== TABELAS (SEGURAS) =====
         if (doc.autoTable) {
             doc.autoTable({
                 startY: 35,
-                head: [["Parâmetro", "Valor"]],
+                head: [["Parâmetro de Entrada", "Valor"]],
                 body: [
                     ["Comprimento (L)", L + " m"],
                     ["Carga (q)", q + " kN/m"],
-                    ["fck", fck + " MPa"],
-                    ["bw", bw + " m"],
-                    ["h", h + " m"],
-                    ["Tipo", tipo]
+                    ["Resistência (fck)", fck + " MPa"],
+                    ["Largura (bw)", bw + " cm"],
+                    ["Altura (h)", h + " cm"],
+                    ["Tipo de Estrutura", tipo === "balanco" ? "Balanço" : "Biapoiada"]
                 ]
             });
 
             doc.autoTable({
                 startY: doc.lastAutoTable.finalY + 10,
-                head: [["Resultado", "Valor"]],
+                head: [["Resultado do Dimensionamento", "Valor"]],
                 body: [
-                    ["Momento", momento.toFixed(2) + " kN·m"],
-                    ["fcd", fcd.toFixed(2) + " MPa"],
-                    ["Momento resistente", Mres.toFixed(2) + " kN·m"],
-                    ["Área de aço", As.toFixed(2) + " mm²"]
+                    ["Momento Fletor (Mk)", momento.toFixed(2) + " kN·m"],
+                    ["Momento de Cálculo (Md)", (momento * 1.4).toFixed(2) + " kN·m"],
+                    ["Momento Resistente", Mres.toFixed(2) + " kN·m"],
+                    ["Área de Aço (As)", As.toFixed(2) + " mm²"]
                 ]
             });
-        } else {
-            doc.text(`Momento: ${momento.toFixed(2)} kN·m`, 20, 50);
-            doc.text(`Área de aço: ${As.toFixed(2)} mm²`, 20, 60);
         }
 
-        // ===== POSIÇÃO SEGURA DO Y =====
-        let yBase = doc.lastAutoTable ? doc.lastAutoTable.finalY : 80;
-
-        // ===== DIAGRAMA =====
-        let y = yBase + 25;
-
+        // 5. DIAGRAMA DE MOMENTO (O desenho da curva)
+        let yBase = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
         doc.setFontSize(12);
-        doc.text("Diagrama de Momento Fletor", 60, 180);
-
-        y += 10;
-
-        let x0 = 30;
-        let x1 = 180;
-
-        doc.line(x0, y, x1, y);
+        doc.text("Diagrama de Momento Fletor (Esquemático)", 60, yBase - 10);
+        
+        let x0 = 30; // Início da viga no desenho
+        let x1 = 180; // Fim da viga no desenho
+        doc.setLineWidth(1);
+        doc.line(x0, yBase, x1, yBase); // Linha da viga
 
         let prevX, prevY;
-
+        doc.setDrawColor(200, 0, 0); // Cor vermelha para a curva
         for (let i = 0; i <= 50; i++) {
             let x = x0 + (i / 50) * (x1 - x0);
-            let t = (x - x0) / (x1 - x0);
+            let t = i / 50;
+            let yOffset = (tipo === "biapoiada") ? -40 * (4 * t * (1 - t)) : -40 * (t * t);
 
-            let yOffset = (tipo === "biapoiada")
-                ? -40 * (4 * t * (1 - t))
-                : -40 * (t * t);
-
-            if (i > 0) {
-                doc.line(prevX, prevY, x, y + yOffset);
-            }
-
-            prevX = x;
-            prevY = y + yOffset;
+            if (i > 0) doc.line(prevX, prevY, x, yBase + yOffset);
+            prevX = x; 
+            prevY = yBase + yOffset;
         }
 
-        // ===== AVISO GRANDE =====
-        let avisoY = 250;
-
+        // 6. AVISO LEGAL (RODAPÉ)
+        let avisoY = 260;
         doc.setFillColor(255, 230, 230);
-        doc.rect(15, avisoY - 10, 180, 20, "F");
+        doc.rect(15, avisoY - 5, 180, 25, "F");
+        doc.setTextColor(150, 0, 0);
+        doc.setFontSize(9);
+        doc.text("AVISO: Este documento é para fins de pré-dimensionamento educacional.", 20, avisoY + 5);
+        doc.text("É obrigatória a assinatura de um Engenheiro Civil para execução da obra.", 20, avisoY + 12);
 
-        doc.setTextColor(200, 0, 0);
-        doc.setFontSize(10);
-
-        doc.text(
-            "ATENÇÃO: Este relatório é apenas para fins educacionais e de pré-dimensionamento.",
-            20,
-            avisoY,
-            { maxWidth: 170 }
-        );
-
-        doc.text(
-            "Os resultados NÃO substituem um projeto estrutural conforme normas técnicas.",
-            20,
-            avisoY + 6,
-            { maxWidth: 170 }
-        );
-
-        doc.text(
-            "É obrigatória a validação por profissional habilitado.",
-            20,
-            avisoY + 12,
-            { maxWidth: 170 }
-        );
-
-        // 🔥 ESSENCIAL (AGORA VAI FUNCIONAR)
-        doc.save("relatorio_infracore.pdf");
+        // 7. SALVAR
+        doc.save("Relatorio_Estrutural_Infracore.pdf");
 
     } catch (erro) {
         console.error(erro);
-        alert("Erro ao gerar PDF. Veja o console (F12).");
+        alert("Erro ao gerar o PDF. Verifique se preencheu os números corretamente.");
     }
 }
