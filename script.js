@@ -26,7 +26,13 @@ function calcular() {
         momento = (q * L * L) / 8;
     }
 
-    let reacao = (q * L) / 2;
+    let reacao;
+
+    if (tipo === "balanco") {
+        reacao = q * L;
+    } else {
+        reacao = (q * L) / 2;
+    }
 
     // RESISTÊNCIA DO CONCRETO
     let fcd = fck / 1.4;
