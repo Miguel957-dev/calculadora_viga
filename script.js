@@ -56,16 +56,16 @@ function calcular() {
     // 🔥 CÁLCULO DO AÇO CORRIGIDO
     let fyd = 435; // MPa (CA-50)
 
-    // 1. Aplicar o coeficiente de segurança de 1.4 (Obrigatório por norma)
+    // 1. Aplicar o coeficiente de segurança de 1.4 no momento
     let Md_Nm = (momento * 1.4) * 1000000; 
 
-    // 2. d_mm deve ser a altura útil (ex: 800mm - 40mm de cobrimento)
-    let d_mm = (d_total - cobrimento) * 1000; 
+    // 2. Usar o 'd' que você já calculou lá em cima (convertido para mm)
+    let d_mm = d * 1000; 
 
-    // 3. Usar 0.8 para maior segurança em balanços pesados
+    // 3. Usar 0.80 para maior segurança em balanços
     let As = Md_Nm / (0.80 * fyd * d_mm); // mm²
     
-        // 🔩 BITOLAS DISPONÍVEIS
+    // 🔩 BITOLAS DISPONÍVEIS
     let bitolas = [
         {diametro: 6.3, area: 31.2},
         {diametro: 8, area: 50.3},
@@ -74,15 +74,14 @@ function calcular() {
         {diametro: 16, area: 201.1}
     ];
 
-    let sugestao = "";
+    let sugestao = "Necessário bitola maior que 16mm"; // Mensagem padrão caso passe de 10 barras
 
     // 🔍 ENCONTRAR MELHOR COMBINAÇÃO
     for (let i = 0; i < bitolas.length; i++) {
         let barra = bitolas[i];
-
         let quantidade = Math.ceil(As / barra.area);
 
-        if (quantidade <= 10) { // limite simples pra não sugerir absurdo
+        if (quantidade <= 10) { 
             sugestao = quantidade + " barras de Ø" + barra.diametro + " mm";
             break;
         }
